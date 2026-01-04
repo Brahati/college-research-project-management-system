@@ -86,13 +86,10 @@ function FacultyDashboard() {
     <div style={pageStyle}>
       {/* HEADER */}
       <div style={headerStyle}>
-        {/* LEFT: LOGO + TITLE */}
-        <div style={headerLeftStyle}>
-          <img src={rvceLogo} alt="RVCE Logo" style={logoStyle} />
-          <h1 style={titleStyle}>Faculty Dashboard</h1>
-        </div>
+        <img src={rvceLogo} alt="RVCE Logo" style={logoStyle} />
 
-        {/* RIGHT: LOGOUT */}
+        <h1 style={centerTitleStyle}>Faculty Dashboard</h1>
+
         <button style={logoutButtonStyle} onClick={handleLogout}>
           Logout
         </button>
@@ -265,7 +262,7 @@ function FacultyDashboard() {
         </table>
       </div>
 
-      {/* ================= PIE CHART ================= */}
+      {/* ================= PIE ================= */}
       <div style={cardStyle}>
         <h2 style={sectionTitle}>Workload Overview</h2>
         <div style={pieWrapper}>
@@ -287,27 +284,24 @@ const pageStyle = {
 };
 
 const headerStyle = {
+  position: "relative",
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
   marginBottom: "30px",
 };
 
-const headerLeftStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: "14px",
-};
-
 const logoStyle = {
   height: "50px",
-  objectFit: "contain",
 };
 
-const titleStyle = {
+const centerTitleStyle = {
+  position: "absolute",
+  left: "50%",
+  transform: "translateX(-50%)",
+  fontSize: "28px",
+  fontWeight: "600",
   color: "#0a2a66",
-  margin: 0,
-  fontSize: "30px"
 };
 
 const logoutButtonStyle = {
@@ -342,7 +336,6 @@ const innerTableStyle = {
   width: "100%",
   borderCollapse: "collapse",
   marginTop: "12px",
-  backgroundColor: "#ffffff",
 };
 
 const thStyle = {
@@ -358,7 +351,6 @@ const tdStyle = {
   padding: "12px",
   borderBottom: "1px solid #e0e0e0",
   verticalAlign: "top",
-  color: "#000000",
 };
 
 const linkStyle = {

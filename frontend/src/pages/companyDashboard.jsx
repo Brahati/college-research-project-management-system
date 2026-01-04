@@ -20,10 +20,12 @@ function CompanyDashboard() {
   const navigate = useNavigate();
 
   const [projects, setProjects] = useState([]);
+  const [companyName, setCompanyName] = useState("");
   const [loading, setLoading] = useState(true);
   const [expandedProject, setExpandedProject] = useState(null);
   const [showPitch, setShowPitch] = useState(false);
 
+  /* ---------------- STATS ---------------- */
   const approved = projects.filter(p => p.status === "APPROVED").length;
   const pending = projects.filter(p => p.status === "PENDING").length;
   const rejected = projects.filter(p => p.status === "REJECTED").length;
@@ -38,16 +40,28 @@ function CompanyDashboard() {
     ],
   };
 
+  /* ---------------- LOGOUT ---------------- */
   const handleLogout = () => {
     localStorage.clear();
     navigate("/");
   };
 
+  /* ---------------- FETCH COMPANY PROFILE ---------------- */
+  const fetchCompanyProfile = async () => {
+    try {
+      const res = await api.get("/auth/me");
+      setCompanyName(res.data.company_name || res.data.name || "Company");
+    } catch {
+      setCompanyName("Company");
+    }
+  };
+
+  /* ---------------- FETCH PROJECTS ---------------- */
   const fetchProjects = async () => {
     try {
       const res = await api.get("/company/projects");
       setProjects(res.data || []);
-    } catch (err) {
+    } catch {
       alert("Failed to load projects");
     } finally {
       setLoading(false);
@@ -55,6 +69,7 @@ function CompanyDashboard() {
   };
 
   useEffect(() => {
+    fetchCompanyProfile();
     fetchProjects();
   }, []);
 
@@ -65,7 +80,7 @@ function CompanyDashboard() {
       {/* HEADER */}
       <div style={headerStyle}>
         <img src={rvceLogo} alt="RVCE Logo" style={logoStyle} />
-        <h1 style={centerTitleStyle}>Company Dashboard</h1>
+        <h1 style={centerTitleStyle}>Welcome, {companyName}</h1>
         <button style={logoutButtonStyle} onClick={handleLogout}>
           Logout
         </button>
@@ -145,7 +160,6 @@ function CompanyDashboard() {
                       <td colSpan="3" style={tdStyle}>
                         <p><b>Team Size:</b> {p.team_size}</p>
 
-                        {/* PROJECT UPDATES */}
                         <div style={updateBoxStyle}>
                           <ProjectUpdates projectId={p.project_id} />
                         </div>
@@ -251,7 +265,6 @@ const thStyle = {
 const tdStyle = {
   padding: "12px",
   borderBottom: "1px solid #e0e0e0",
-  verticalAlign: "top",
 };
 
 const linkStyle = {
@@ -270,7 +283,7 @@ const expandBoxStyle = {
 const updateBoxStyle = {
   marginTop: "12px",
   padding: "12px",
-  backgroundColor: "#e3f2fd", // ✅ blue-tinted
+  backgroundColor: "#e3f2fd",
   borderRadius: "8px",
 };
 

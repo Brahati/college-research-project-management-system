@@ -10,10 +10,7 @@ function PitchProject({ onSuccess }) {
   });
 
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -124,6 +121,7 @@ const labelStyle = {
   color: "#0a2a66",
 };
 
+/* 🔥 FIXED INPUT STYLE */
 const inputStyle = {
   width: "100%",
   height: "44px",
@@ -132,8 +130,11 @@ const inputStyle = {
   border: "1px solid #ccc",
   fontSize: "14px",
   boxSizing: "border-box",
+  backgroundColor: "#ffffff",   // ✅ white
+  color: "#000000",             // ✅ black text
 };
 
+/* 🔥 FIXED TEXTAREA STYLE */
 const textareaStyle = {
   width: "100%",
   padding: "10px 12px",
@@ -142,6 +143,8 @@ const textareaStyle = {
   fontSize: "14px",
   fontFamily: "Arial, sans-serif",
   boxSizing: "border-box",
+  backgroundColor: "#ffffff",   // ✅ white
+  color: "#000000",             // ✅ black text
 };
 
 const submitButtonStyle = {

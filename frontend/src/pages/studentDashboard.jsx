@@ -22,9 +22,11 @@ function StudentDashboard() {
   const fetchProjects = async () => {
     try {
       const res = await api.get("/student/projects");
-      setProjects(res.data || []);
+      setProjects(
+        (res.data || []).map(p => ({ ...p, statement: "" }))
+      );
     } catch (err) {
-      console.error("Failed to load projects:", err);
+      console.error(err);
       setError("Failed to load projects");
       setProjects([]);
     }
@@ -36,14 +38,14 @@ function StudentDashboard() {
       const res = await api.get("/student/applications");
       setApplications(res.data || []);
     } catch (err) {
-      console.error("Failed to load applications:", err);
+      console.error(err);
       setApplications([]);
     }
   };
 
   /* ---------------- APPLY TO PROJECT ---------------- */
   const applyToProject = async (projectId, statement) => {
-    if (!statement) {
+    if (!statement.trim()) {
       alert("Please enter a statement of interest");
       return;
     }
@@ -54,11 +56,10 @@ function StudentDashboard() {
         statement_of_interest: statement,
       });
 
-      alert("Application submitted");
+      alert("Application submitted successfully");
       setExpandedProject(null);
       fetchMyApplications();
     } catch (err) {
-      console.error("Failed to apply:", err);
       alert(
         err.response?.data?.message ||
           "Failed to submit application"
@@ -67,11 +68,14 @@ function StudentDashboard() {
   };
 
   /* ---------------- INIT ---------------- */
+  
+  
   useEffect(() => {
-    (async () => {
+    const init = async () => {
       await fetchProjects();
       fetchMyApplications();
-    })();
+    };
+    init();
   }, []);
 
   return (
@@ -102,7 +106,7 @@ function StudentDashboard() {
           <tbody>
             {projects.length === 0 ? (
               <tr>
-                <td style={tdStyle} colSpan="3">
+                <td colSpan="3" style={tdStyle}>
                   No projects available
                 </td>
               </tr>
@@ -130,36 +134,45 @@ function StudentDashboard() {
 
                   {expandedProject === p.project_id && (
                     <tr>
-                      <td style={tdStyle} colSpan="3">
-                        <textarea
-                          rows="3"
-                          placeholder="Statement of Interest"
-                          style={textareaStyle}
-                          onChange={(e) =>
-                            setProjects((prev) =>
-                              prev.map((proj) =>
-                                proj.project_id === p.project_id
-                                  ? {
-                                      ...proj,
-                                      statement: e.target.value,
-                                    }
-                                  : proj
-                              )
-                            )
-                          }
-                        />
+                      <td colSpan="3" style={tdStyle}>
+                        <div style={expandContainerStyle}>
+                          {/* PROJECT DESCRIPTION */}
+                          <p style={descriptionStyle}>
+                            <b>Description:</b> {p.description}
+                          </p>
 
-                        <button
-                          style={actionButtonStyle}
-                          onClick={() =>
-                            applyToProject(
-                              p.project_id,
-                              p.statement
-                            )
-                          }
-                        >
-                          Apply
-                        </button>
+                          {/* STATEMENT OF INTEREST */}
+                          <textarea
+                            rows="4"
+                            placeholder="Write your statement of interest here..."
+                            value={p.statement}
+                            style={textareaStyle}
+                            onChange={(e) =>
+                              setProjects(prev =>
+                                prev.map(proj =>
+                                  proj.project_id === p.project_id
+                                    ? {
+                                        ...proj,
+                                        statement: e.target.value,
+                                      }
+                                    : proj
+                                )
+                              )
+                            }
+                          />
+
+                          <button
+                            style={actionButtonStyle}
+                            onClick={() =>
+                              applyToProject(
+                                p.project_id,
+                                p.statement
+                              )
+                            }
+                          >
+                            Apply
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -185,7 +198,7 @@ function StudentDashboard() {
           <tbody>
             {applications.length === 0 ? (
               <tr>
-                <td style={tdStyle} colSpan="3">
+                <td colSpan="3" style={tdStyle}>
                   No applications yet
                 </td>
               </tr>
@@ -199,7 +212,7 @@ function StudentDashboard() {
                       fontWeight: "600",
                       color:
                         a.status === "ACCEPTED"
-                          ? "green"
+                          ? "#2e7d32"
                           : a.status === "REJECTED"
                           ? "#b00020"
                           : "#f57c00",
@@ -246,7 +259,6 @@ const centerTitleStyle = {
   position: "absolute",
   left: "50%",
   transform: "translateX(-50%)",
-  margin: 0,
   fontSize: "28px",
   fontWeight: "600",
   color: "#0a2a66",
@@ -306,11 +318,22 @@ const linkStyle = {
   fontWeight: "600",
 };
 
+const expandContainerStyle = {
+  maxWidth: "100%",
+};
+
+const descriptionStyle = {
+  marginBottom: "10px",
+};
+
 const textareaStyle = {
   width: "100%",
+  boxSizing: "border-box",
   padding: "10px",
   borderRadius: "6px",
   border: "1px solid #ccc",
+  backgroundColor: "#ffffff",
+  color: "#000000",
   marginBottom: "10px",
   fontFamily: "Arial, sans-serif",
 };
