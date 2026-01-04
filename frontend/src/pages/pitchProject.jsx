@@ -6,13 +6,13 @@ function PitchProject({ onSuccess }) {
     title: "",
     description: "",
     department: "",
-    team_size: ""
+    team_size: "",
   });
 
   const handleChange = (e) => {
     setForm({
       ...form,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -24,7 +24,7 @@ function PitchProject({ onSuccess }) {
         title: form.title,
         description: form.description,
         department: form.department,
-        team_size: Number(form.team_size)
+        team_size: Number(form.team_size),
       });
 
       alert("Project submitted for admin approval");
@@ -33,7 +33,7 @@ function PitchProject({ onSuccess }) {
         title: "",
         description: "",
         department: "",
-        team_size: ""
+        team_size: "",
       });
 
       if (onSuccess) onSuccess();
@@ -44,51 +44,116 @@ function PitchProject({ onSuccess }) {
   };
 
   return (
-    <div style={{ marginBottom: "40px" }}>
-      <h2>Pitch New Project</h2>
+    <div>
+      <h2 style={sectionTitle}>Pitch New Project</h2>
 
       <form onSubmit={handleSubmit}>
-        <input
-          name="title"
-          placeholder="Project Title"
-          value={form.title}
-          onChange={handleChange}
-          required
-        />
-        <br /><br />
+        <div style={fieldGroup}>
+          <label style={labelStyle}>Project Title</label>
+          <input
+            name="title"
+            placeholder="Enter project title"
+            value={form.title}
+            onChange={handleChange}
+            required
+            style={inputStyle}
+          />
+        </div>
 
-        <textarea
-          name="description"
-          placeholder="Project Description"
-          value={form.description}
-          onChange={handleChange}
-          required
-        />
-        <br /><br />
+        <div style={fieldGroup}>
+          <label style={labelStyle}>Project Description</label>
+          <textarea
+            name="description"
+            placeholder="Describe the project"
+            value={form.description}
+            onChange={handleChange}
+            required
+            rows="4"
+            style={textareaStyle}
+          />
+        </div>
 
-        <input
-          name="department"
-          placeholder="Department (e.g. CSE)"
-          value={form.department}
-          onChange={handleChange}
-          required
-        />
-        <br /><br />
+        <div style={fieldGroup}>
+          <label style={labelStyle}>Department</label>
+          <input
+            name="department"
+            placeholder="e.g. CSE"
+            value={form.department}
+            onChange={handleChange}
+            required
+            style={inputStyle}
+          />
+        </div>
 
-        <input
-          name="team_size"
-          type="number"
-          placeholder="Team Size"
-          value={form.team_size}
-          onChange={handleChange}
-          required
-        />
-        <br /><br />
+        <div style={fieldGroup}>
+          <label style={labelStyle}>Team Size</label>
+          <input
+            name="team_size"
+            type="number"
+            placeholder="e.g. 4"
+            value={form.team_size}
+            onChange={handleChange}
+            required
+            style={inputStyle}
+          />
+        </div>
 
-        <button type="submit">Submit Project</button>
+        <button type="submit" style={submitButtonStyle}>
+          Submit Project
+        </button>
       </form>
     </div>
   );
 }
+
+/* ================= STYLES ================= */
+
+const sectionTitle = {
+  color: "#0a2a66",
+  marginBottom: "16px",
+};
+
+const fieldGroup = {
+  marginBottom: "16px",
+};
+
+const labelStyle = {
+  display: "block",
+  marginBottom: "6px",
+  fontWeight: "600",
+  color: "#0a2a66",
+};
+
+const inputStyle = {
+  width: "100%",
+  height: "44px",
+  padding: "0 12px",
+  borderRadius: "6px",
+  border: "1px solid #ccc",
+  fontSize: "14px",
+  boxSizing: "border-box",
+};
+
+const textareaStyle = {
+  width: "100%",
+  padding: "10px 12px",
+  borderRadius: "6px",
+  border: "1px solid #ccc",
+  fontSize: "14px",
+  fontFamily: "Arial, sans-serif",
+  boxSizing: "border-box",
+};
+
+const submitButtonStyle = {
+  marginTop: "10px",
+  padding: "10px 20px",
+  backgroundColor: "#0a2a66",
+  color: "#ffffff",
+  border: "none",
+  borderRadius: "6px",
+  fontSize: "14px",
+  fontWeight: "600",
+  cursor: "pointer",
+};
 
 export default PitchProject;

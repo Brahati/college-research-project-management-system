@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+
+import rvceLogo from "../assets/rvce_logo.png";
+
 import { Bar, Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -8,7 +12,7 @@ import {
   Legend,
   CategoryScale,
   LinearScale,
-  BarElement
+  BarElement,
 } from "chart.js";
 
 ChartJS.register(
@@ -20,20 +24,40 @@ ChartJS.register(
   BarElement
 );
 
+/* 🔒 FIXED STATUS → COLOR MAPPING */
+const STATUS_COLORS = {
+  PENDING: "#fbc02d",   // Yellow
+  APPROVED: "#2e7d32",  // Green
+  REJECTED: "#b00020",  // Red
+};
+
 function AdminDashboard() {
+  const navigate = useNavigate();
+
   const [projects, setProjects] = useState([]);
   const [stats, setStats] = useState(null);
 
-const fetchStats = async () => {
-  const res = await api.get("/admin/stats");
-  setStats(res.data);
-};
+  /* ---------------- LOGOUT ---------------- */
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/");
+  };
 
+  /* ---------------- FETCH STATS ---------------- */
+  const fetchStats = async () => {
+    try {
+      const res = await api.get("/admin/stats");
+      setStats(res.data);
+    } catch (err) {
+      console.error("Failed to fetch stats", err);
+    }
+  };
 
+  /* ---------------- FETCH PENDING PROJECTS ---------------- */
   const fetchPendingProjects = async () => {
     try {
       const res = await api.get("/admin/projects/pending");
-      setProjects(res.data);
+      setProjects(res.data || []);
     } catch (err) {
       console.error(err);
       alert("Failed to load pending projects");
@@ -41,95 +65,236 @@ const fetchStats = async () => {
   };
 
   useEffect(() => {
-  (async () => {
-    await fetchPendingProjects();
-    fetchStats();
-  })();
-}, []);
+    (async () => {
+      await fetchPendingProjects();
+      await fetchStats();
+    })();
+  }, []);
 
+  /* ---------------- UPDATE PROJECT STATUS ---------------- */
   const updateStatus = async (projectId, status) => {
-  try {
-    await api.post("/admin/projects/status", {
-      project_id: projectId,
-      status,
-    });
+    try {
+      await api.post("/admin/projects/status", {
+        project_id: projectId,
+        status,
+      });
 
-    alert(`Project ${status}`);
-    fetchPendingProjects();
-  } catch (err) {
-    console.error(err);
-    alert("Action failed");
-  }
-};
+      alert(`Project ${status}`);
+      fetchPendingProjects();
+      fetchStats();
+    } catch (err) {
+      console.error(err);
+      alert("Action failed");
+    }
+  };
+
+  /* ---------------- NORMALIZE STATUS ORDER ---------------- */
+  const orderedStatusStats = stats
+    ? ["PENDING", "APPROVED", "REJECTED"].map((status) => {
+        const found = stats.statusStats.find(
+          (s) => s.status === status
+        );
+        return found || { status, count: 0 };
+      })
+    : [];
 
   return (
-    <div style={{ padding: "30px", color: "white" }}>
-      <h1>Admin Dashboard</h1>
+    <div style={pageStyle}>
+      {/* HEADER */}
+      <div style={headerStyle}>
+        <img src={rvceLogo} alt="RVCE Logo" style={logoStyle} />
+        <h1 style={centerTitleStyle}>Admin Dashboard</h1>
+        <button style={logoutButtonStyle} onClick={handleLogout}>
+          Logout
+        </button>
+      </div>
 
-      <h2>Pending Projects</h2>
+      {/* ================= PENDING PROJECTS ================= */}
+      <div style={cardStyle}>
+        <h2 style={sectionTitle}>Pending Projects</h2>
 
-      {projects.length === 0 ? (
-        <p>No pending projects</p>
-      ) : (
-        projects.map((p) => (
-          <div
-            key={p.project_id}
-            style={{
-              border: "1px solid #555",
-              padding: "15px",
-              marginBottom: "15px",
-            }}
-          >
-            <h3>{p.title}</h3>
-            <p><b>Company:</b> {p.company_name}</p>
-            <p><b>Department:</b> {p.department}</p>
-            <p>{p.description}</p>
+        {projects.length === 0 ? (
+          <p>No pending projects</p>
+        ) : (
+          projects.map((p) => (
+            <div key={p.project_id} style={projectCardStyle}>
+              <h3 style={projectTitleStyle}>{p.title}</h3>
 
-            <button 
-              onClick={() => updateStatus(p.project_id, "APPROVED")}
-            >
-              Approve
-            </button>
+              <p><b>Company:</b> {p.company_name}</p>
+              <p><b>Department:</b> {p.department}</p>
+              <p>{p.description}</p>
 
-            <button
-              style={{ marginLeft: "10px" }}
-              onClick={() => updateStatus(p.project_id, "REJECTED")}
-            >
-              Reject
-            </button>
+              <div style={{ marginTop: "12px" }}>
+                <button
+                  style={approveButtonStyle}
+                  onClick={() =>
+                    updateStatus(p.project_id, "APPROVED")
+                  }
+                >
+                  Approve
+                </button>
 
-          </div>
-        ))
-      )}
+                <button
+                  style={rejectButtonStyle}
+                  onClick={() =>
+                    updateStatus(p.project_id, "REJECTED")
+                  }
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* ================= PIE CHART ================= */}
       {stats && (
-  <>
-      <h2>Project Status Overview</h2>
-          <Pie
-            data={{
-              labels: stats.statusStats.map(s => s.status),
-              datasets: [{
-                data: stats.statusStats.map(s => s.count),
-                backgroundColor: ["orange", "green", "red"]
-              }]
-            }}
-          />
+        <div style={cardStyle}>
+          <h2 style={sectionTitle}>Project Status Overview</h2>
 
-          <h2 style={{ marginTop: "40px" }}>Department-wise Projects</h2>
-          <Bar
-            data={{
-              labels: stats.departmentStats.map(d => d.department),
-              datasets: [{
-                label: "Projects",
-                data: stats.departmentStats.map(d => d.count),
-                backgroundColor: "skyblue"
-              }]
-            }}
-          />
-        </>
+          <div style={chartWrapper}>
+            <Pie
+              data={{
+                labels: orderedStatusStats.map((s) => s.status),
+                datasets: [
+                  {
+                    data: orderedStatusStats.map((s) => s.count),
+                    backgroundColor: orderedStatusStats.map(
+                      (s) => STATUS_COLORS[s.status]
+                    ),
+                  },
+                ],
+              }}
+            />
+          </div>
+        </div>
       )}
 
+      {/* ================= BAR CHART ================= */}
+      {stats && (
+        <div style={cardStyle}>
+          <h2 style={sectionTitle}>Department-wise Projects</h2>
+
+          <div style={barWrapper}>
+            <Bar
+              data={{
+                labels: stats.departmentStats.map(
+                  (d) => d.department
+                ),
+                datasets: [
+                  {
+                    label: "Projects",
+                    data: stats.departmentStats.map(
+                      (d) => d.count
+                    ),
+                    backgroundColor: "#90caf9",
+                  },
+                ],
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+/* ================= STYLES ================= */
+
+const pageStyle = {
+  minHeight: "100vh",
+  backgroundColor: "#ffffff",
+  padding: "30px",
+  fontFamily: "Arial, sans-serif",
+  color: "#000000",
+};
+
+const headerStyle = {
+  position: "relative",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: "30px",
+};
+
+const logoStyle = {
+  height: "50px",
+};
+
+const centerTitleStyle = {
+  position: "absolute",
+  left: "50%",
+  transform: "translateX(-50%)",
+  margin: 0,
+  fontSize: "28px",
+  fontWeight: "600",
+  color: "#0a2a66",
+};
+
+const logoutButtonStyle = {
+  backgroundColor: "#0a2a66",
+  color: "#ffffff",
+  border: "none",
+  padding: "10px 18px",
+  borderRadius: "6px",
+  cursor: "pointer",
+};
+
+const cardStyle = {
+  backgroundColor: "#f4f6fa",
+  padding: "24px",
+  borderRadius: "10px",
+  boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+  marginBottom: "30px",
+};
+
+const sectionTitle = {
+  color: "#0a2a66",
+  marginBottom: "16px",
+};
+
+const projectCardStyle = {
+  backgroundColor: "#ffffff",
+  padding: "16px",
+  borderRadius: "8px",
+  border: "1px solid #e0e0e0",
+  marginBottom: "16px",
+};
+
+const projectTitleStyle = {
+  marginTop: 0,
+  color: "#0a2a66",
+};
+
+const approveButtonStyle = {
+  padding: "8px 16px",
+  backgroundColor: "#2e7d32",
+  color: "#ffffff",
+  border: "none",
+  borderRadius: "6px",
+  cursor: "pointer",
+};
+
+const rejectButtonStyle = {
+  padding: "8px 16px",
+  backgroundColor: "#b00020",
+  color: "#ffffff",
+  border: "none",
+  borderRadius: "6px",
+  cursor: "pointer",
+  marginLeft: "10px",
+};
+
+const chartWrapper = {
+  width: "260px",
+  height: "260px",
+  margin: "0 auto",
+};
+
+const barWrapper = {
+  maxWidth: "600px",
+  margin: "0 auto",
+};
 
 export default AdminDashboard;

@@ -1,307 +1,237 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import ProjectUpdates from "../components/projectUpdates";
 
+import rvceLogo from "../assets/rvce_logo.png";
+
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-				   
-	
-				  
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 function FacultyDashboard() {
-																 
+  const navigate = useNavigate();
+
   const [myProjects, setMyProjects] = useState([]);
   const [availableProjects, setAvailableProjects] = useState([]);
   const [applications, setApplications] = useState([]);
   const [expandedProject, setExpandedProject] = useState(null);
   const [loading, setLoading] = useState(false);
 
-													
+  /* ---------------- LOGOUT ---------------- */
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/");
+  };
 
-  /* ---------------- FETCH MY PROJECTS ---------------- */
+  /* ---------------- FETCH DATA ---------------- */
   const fetchMyProjects = async () => {
-    try {
-      const res = await api.get("/faculty/projects/my");
-      setMyProjects(res.data || []);
-    } catch (err) {
-      console.error("Failed to fetch faculty projects:", err);
-      alert("Unable to load your projects");
-      setMyProjects([]);
-    }
+    const res = await api.get("/faculty/projects/my");
+    setMyProjects(res.data || []);
   };
 
-  /* ---------------- FETCH AVAILABLE PROJECTS ---------------- */
   const fetchAvailableProjects = async () => {
-    try {
-      const res = await api.get("/faculty/projects/available");
-      setAvailableProjects(res.data || []);
-    } catch (err) {
-      console.error("Failed to fetch available projects:", err);
-      alert("Unable to load available projects");
-      setAvailableProjects([]);
-    }
+    const res = await api.get("/faculty/projects/available");
+    setAvailableProjects(res.data || []);
   };
 
-  /* ---------------- FETCH APPLICATIONS ---------------- */
   const fetchApplications = async (projectId) => {
-						 
     if (!projectId) return;
-
-    try {
-      const res = await api.get(
-        `/faculty/projects/${projectId}/applications`
-      );
-      setApplications(res.data || []);
-    } catch (err) {
-      console.error("Failed to fetch applications:", err);
-      alert("Unable to load applications for this project");
-      setApplications([]);
-			   
-							
-    }
+    const res = await api.get(
+      `/faculty/projects/${projectId}/applications`
+    );
+    setApplications(res.data || []);
   };
 
-												 
-
-  /* ---------------- UNDERTAKE PROJECT ---------------- */
   const undertakeProject = async (projectId) => {
-    try {
-      await api.post("/faculty/projects/undertake", {
-        project_id: projectId
-      });
-
-      alert("Project undertaken successfully");
-
-      await fetchAvailableProjects();
-      await fetchMyProjects();
-    } catch (err) {
-      console.error("Failed to undertake project:", err);
-      alert(
-        err.response?.data?.message ||
-          "Failed to undertake project"
-      );
-    }
+    await api.post("/faculty/projects/undertake", {
+      project_id: projectId,
+    });
+    fetchAvailableProjects();
+    fetchMyProjects();
   };
 
-  /* ---------------- ACCEPT / REJECT APPLICATION ---------------- */
-  const updateApplicationStatus = async (applicationId, status) => {
-    if (!applicationId || !status) return;
-
-    try {
-      await api.post("/faculty/applications/update", {
-        application_id: applicationId,
-        status
-      });
-
-      alert(`Application ${status}`);
-      await fetchApplications(expandedProject);
-    } catch (err) {
-      console.error("Failed to update application:", err);
-      alert(
-        err.response?.data?.message ||
-          "Failed to update application"
-      );
-    }
+  const updateApplicationStatus = async (id, status) => {
+    await api.post("/faculty/application/update", {
+      application_id: id,
+      status,
+    });
+    fetchApplications(expandedProject);
   };
-
-  /* ---------------- INITIAL LOAD ---------------- */
 
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      try {
-        await fetchMyProjects();
-        await fetchAvailableProjects();
-      } catch (err) {
-        console.error("Faculty dashboard init error:", err);
-      } finally {
-        setLoading(false);
-      }
+      await fetchMyProjects();
+      await fetchAvailableProjects();
+      setLoading(false);
     };
-
     init();
   }, []);
 
-  /* ---------------- PIE DATA ---------------- */
   const pieData = {
     labels: ["My Projects", "Available Projects"],
     datasets: [
       {
         data: [myProjects.length, availableProjects.length],
-        backgroundColor: ["#4fc3f7", "#90a4ae"]
-      }
-    ]
+        backgroundColor: ["#0a2a66", "#90a4ae"],
+      },
+    ],
   };
 
-  /* ---------------- UI ---------------- */
-  if (loading) {
-    return <p style={{ padding: "30px" }}>Loading dashboard...</p>;
-  }
+  if (loading) return <p style={{ padding: "20px" }}>Loading...</p>;
 
   return (
-    <div style={{ padding: "30px", color: "white" }}>
-      <h1>Faculty Dashboard</h1>
+    <div style={pageStyle}>
+      {/* HEADER */}
+      <div style={headerStyle}>
+        {/* LEFT: LOGO + TITLE */}
+        <div style={headerLeftStyle}>
+          <img src={rvceLogo} alt="RVCE Logo" style={logoStyle} />
+          <h1 style={titleStyle}>Faculty Dashboard</h1>
+        </div>
 
-									   
-					   
-															
-							  
-			
+        {/* RIGHT: LOGOUT */}
+        <button style={logoutButtonStyle} onClick={handleLogout}>
+          Logout
+        </button>
+      </div>
 
       {/* ================= MY PROJECTS ================= */}
-      <h2>My Projects</h2>
+      <div style={cardStyle}>
+        <h2 style={sectionTitle}>My Projects</h2>
 
-      <table border="1" width="100%" cellPadding="10">
-        <thead>
-          <tr>
-            <th>Project Title</th>
-            <th>Company</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {myProjects.length === 0 ? (
+        <table style={tableStyle}>
+          <thead>
             <tr>
-              <td colSpan="3">No projects assigned yet</td>
+              <th style={thStyle}>Project Title</th>
+              <th style={thStyle}>Company</th>
+              <th style={thStyle}>Status</th>
             </tr>
-          ) : (
-            myProjects.map((p) => (
-              <>
-                <tr key={p.project_id}>
-                  <td
-                    style={{ cursor: "pointer", color: "#4fc3f7" }}
-                    onClick={() => {
-                      const next =
-                        expandedProject === p.project_id
-                          ? null
-                          : p.project_id;
-                      setExpandedProject(next);
-												   
-											
-
-													   
-
-				   
-										   
-                      if (next) fetchApplications(p.project_id);
-                    }}
-                  >
-                    {p.title}
-                  </td>
-                  <td>{p.company_name}</td>
-                  <td>{p.status}</td>
-                </tr>
-		  
-		
-
-                {expandedProject === p.project_id && (
-                  <tr>
-                    <td colSpan="3">
-                      <h4>Applications</h4>
-
-                      {applications.length === 0 ? (
-                        <p>No applications yet</p>
-                      ) : (
-                        <table
-                          border="1"
-                          width="100%"
-                          cellPadding="8"
-                        >
-                          <thead>
-                            <tr>
-                              <th>Student</th>
-                              <th>Email</th>
-                              <th>Statement</th>
-                              <th>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {applications.map((a) => (
-			  
-                              <tr key={a.application_id}>
-                                <td>{a.student}</td>
-                                <td>{a.email}</td>
-                                <td>
-                                  {a.statement_of_interest}
-                                </td>
-                                <td>
-                                  {a.status === "PENDING" ? (
-                                    <>
-                                      <button
-                                        onClick={() =>
-                                          updateApplicationStatus(
-                                            a.application_id,
-                                            "ACCEPTED"
-                                          )
-                                        }
-                                      >
-                                        Accept
-                                      </button>
-                                      <button
-                                        style={{
-                                          marginLeft: "8px"
-                                        }}
-                                        onClick={() =>
-                                          updateApplicationStatus(
-                                            a.application_id,
-                                            "REJECTED"
-                                          )
-                                        }
-                                      >
-                                        Reject
-                                      </button>
-                                    </>
-                                  ) : (
-                                    a.status
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-
-                      <ProjectUpdates
-                        projectId={p.project_id}
-                      />
+          </thead>
+          <tbody>
+            {myProjects.length === 0 ? (
+              <tr>
+                <td style={tdStyle} colSpan="3">
+                  No projects assigned
+                </td>
+              </tr>
+            ) : (
+              myProjects.map((p) => (
+                <>
+                  <tr key={p.project_id}>
+                    <td
+                      style={{ ...tdStyle, ...linkStyle }}
+                      onClick={() => {
+                        const next =
+                          expandedProject === p.project_id
+                            ? null
+                            : p.project_id;
+                        setExpandedProject(next);
+                        if (next) fetchApplications(p.project_id);
+                      }}
+                    >
+                      {p.title}
                     </td>
+                    <td style={tdStyle}>{p.company_name}</td>
+                    <td style={tdStyle}>{p.status}</td>
                   </tr>
-                )}
-              </>
-            ))
-          )}
-        </tbody>
-      </table>
+
+                  {expandedProject === p.project_id && (
+                    <tr>
+                      <td style={tdStyle} colSpan="3">
+                        <h4>Applications</h4>
+
+                        {applications.length === 0 ? (
+                          <p>No applications yet</p>
+                        ) : (
+                          <table style={innerTableStyle}>
+                            <thead>
+                              <tr>
+                                <th style={thStyle}>Student</th>
+                                <th style={thStyle}>Email</th>
+                                <th style={thStyle}>Statement</th>
+                                <th style={thStyle}>Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {applications.map((a) => (
+                                <tr key={a.application_id}>
+                                  <td style={tdStyle}>{a.student}</td>
+                                  <td style={tdStyle}>{a.email}</td>
+                                  <td style={tdStyle}>
+                                    {a.statement_of_interest}
+                                  </td>
+                                  <td style={tdStyle}>
+                                    {a.status === "PENDING" ? (
+                                      <>
+                                        <button
+                                          style={actionButtonStyle}
+                                          onClick={() =>
+                                            updateApplicationStatus(
+                                              a.application_id,
+                                              "ACCEPTED"
+                                            )
+                                          }
+                                        >
+                                          Accept
+                                        </button>
+                                        <button
+                                          style={{
+                                            ...actionButtonStyle,
+                                            marginLeft: "8px",
+                                            backgroundColor: "#b00020",
+                                          }}
+                                          onClick={() =>
+                                            updateApplicationStatus(
+                                              a.application_id,
+                                              "REJECTED"
+                                            )
+                                          }
+                                        >
+                                          Reject
+                                        </button>
+                                      </>
+                                    ) : (
+                                      a.status
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+
+                        <ProjectUpdates projectId={p.project_id} />
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {/* ================= AVAILABLE PROJECTS ================= */}
-      <h2 style={{ marginTop: "40px" }}>
-        Available Projects
-      </h2>
+      <div style={cardStyle}>
+        <h2 style={sectionTitle}>Available Projects</h2>
 
-      <table border="1" width="100%" cellPadding="10">
-        <thead>
-          <tr>
-            <th>Project Title</th>
-            <th>Company</th>
-            <th>Department</th>
-          </tr>
-        </thead>
-        <tbody>
-          {availableProjects.length === 0 ? (
+        <table style={tableStyle}>
+          <thead>
             <tr>
-              <td colSpan="3">No available projects</td>
+              <th style={thStyle}>Project Title</th>
+              <th style={thStyle}>Company</th>
+              <th style={thStyle}>Department</th>
             </tr>
-          ) : (
-            availableProjects.map((p) => (
+          </thead>
+          <tbody>
+            {availableProjects.map((p) => (
               <>
                 <tr key={p.project_id}>
                   <td
-                    style={{
-                      cursor: "pointer",
-                      color: "#81c784"
-                    }}
+                    style={{ ...tdStyle, ...linkStyle }}
                     onClick={() =>
                       setExpandedProject(
                         expandedProject === p.project_id
@@ -312,26 +242,17 @@ function FacultyDashboard() {
                   >
                     {p.title}
                   </td>
-                  <td>{p.company_name}</td>
-                  <td>{p.department}</td>
-											
-					
-						   
-									
-																			 
-					   
-					 
-							
+                  <td style={tdStyle}>{p.company_name}</td>
+                  <td style={tdStyle}>{p.department}</td>
                 </tr>
 
                 {expandedProject === p.project_id && (
                   <tr>
-                    <td colSpan="3">
+                    <td style={tdStyle} colSpan="3">
                       <p>{p.description}</p>
                       <button
-                        onClick={() =>
-                          undertakeProject(p.project_id)
-                        }
+                        style={actionButtonStyle}
+                        onClick={() => undertakeProject(p.project_id)}
                       >
                         Undertake Project
                       </button>
@@ -339,18 +260,126 @@ function FacultyDashboard() {
                   </tr>
                 )}
               </>
-            ))
-          )}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      {/* ================= SUMMARY ================= */}
-      <h2 style={{ marginTop: "5px" }}>
-        Workload Overview
-      </h2>
-      <Pie data={pieData} />
+      {/* ================= PIE CHART ================= */}
+      <div style={cardStyle}>
+        <h2 style={sectionTitle}>Workload Overview</h2>
+        <div style={pieWrapper}>
+          <Pie data={pieData} />
+        </div>
+      </div>
     </div>
   );
 }
+
+/* ================= STYLES ================= */
+
+const pageStyle = {
+  minHeight: "100vh",
+  backgroundColor: "#ffffff",
+  padding: "30px",
+  fontFamily: "Arial, sans-serif",
+  color: "#000000",
+};
+
+const headerStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "30px",
+};
+
+const headerLeftStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: "14px",
+};
+
+const logoStyle = {
+  height: "50px",
+  objectFit: "contain",
+};
+
+const titleStyle = {
+  color: "#0a2a66",
+  margin: 0,
+  fontSize: "30px"
+};
+
+const logoutButtonStyle = {
+  backgroundColor: "#0a2a66",
+  color: "#ffffff",
+  border: "none",
+  padding: "10px 18px",
+  borderRadius: "6px",
+  cursor: "pointer",
+};
+
+const cardStyle = {
+  backgroundColor: "#f4f6fa",
+  padding: "24px",
+  borderRadius: "10px",
+  boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+  marginBottom: "30px",
+};
+
+const sectionTitle = {
+  color: "#0a2a66",
+  marginBottom: "16px",
+};
+
+const tableStyle = {
+  width: "100%",
+  borderCollapse: "collapse",
+  backgroundColor: "#ffffff",
+};
+
+const innerTableStyle = {
+  width: "100%",
+  borderCollapse: "collapse",
+  marginTop: "12px",
+  backgroundColor: "#ffffff",
+};
+
+const thStyle = {
+  textAlign: "left",
+  padding: "12px",
+  backgroundColor: "#e9ecf3",
+  color: "#0a2a66",
+  fontWeight: "600",
+  borderBottom: "1px solid #ccc",
+};
+
+const tdStyle = {
+  padding: "12px",
+  borderBottom: "1px solid #e0e0e0",
+  verticalAlign: "top",
+  color: "#000000",
+};
+
+const linkStyle = {
+  color: "#0a2a66",
+  cursor: "pointer",
+  fontWeight: "600",
+};
+
+const actionButtonStyle = {
+  padding: "8px 14px",
+  backgroundColor: "#0a2a66",
+  color: "#ffffff",
+  border: "none",
+  borderRadius: "5px",
+  cursor: "pointer",
+};
+
+const pieWrapper = {
+  width: "260px",
+  height: "260px",
+  margin: "0 auto",
+};
 
 export default FacultyDashboard;

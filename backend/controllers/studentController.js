@@ -1,49 +1,60 @@
 const db = require("../config/db");
 
+/**
+ * ===============================
+ * STUDENT → VIEW AVAILABLE PROJECTS
+ * (ONLY projects with faculty assigned)
+ * ===============================
+ */
 exports.viewProjects = (req, res) => {
   const sql = `
-    SELECT p.project_id, p.title, p.description, p.department,
-           p.team_size, c.company_name
+    SELECT 
+      p.project_id,
+      p.title,
+      p.description,
+      p.department,
+      p.team_size,
+      c.company_name,
+      u.name AS faculty_name
     FROM projects p
     JOIN companies c ON p.company_id = c.company_id
+    JOIN users u ON p.faculty_id = u.user_id
     WHERE p.status = 'APPROVED'
+      AND p.faculty_id IS NOT NULL
   `;
 
   db.query(sql, (err, results) => {
-    if (err) return res.status(500).json(err);
+    if (err) {
+      console.error("Error fetching student projects:", err);
+      return res
+        .status(500)
+        .json({ message: "Failed to load projects" });
+    }
+
     res.json(results);
   });
 };
 
-/*
+/**
+ * ===============================
+ * STUDENT → APPLY TO PROJECT
+ * ===============================
+ */
 exports.applyProject = (req, res) => {
-  const { project_id, statement } = req.body;
+  const { project_id, statement_of_interest } = req.body;
   const student_id = req.user.user_id;
 
-  const sql = `
-    INSERT INTO project_applications
-    (project_id, student_id, statement_of_interest)
-    VALUES (?, ?, ?)
-  `;
+  if (!project_id || !statement_of_interest) {
+    return res
+      .status(400)
+      .json({ message: "Project ID and statement required" });
+  }
 
-  db.query(sql, [project_id, student_id, statement], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Application submitted" });
-  });
-};
-*/
-exports.applyProject = (req, res) => {
-    const { project_id, statement_of_interest } = req.body;
-
-    console.log("REQ.USER:", req.user);
-    console.log("PROJECT ID:", project_id);
-    console.log("STATEMENT:", statement_of_interest);
-
-    const student_id = req.user.user_id; // we will verify this
-
-    if (!student_id) {
-      return res.status(400).json({ message: "Student ID missing in token" });
-    }
+  if (!student_id) {
+    return res
+      .status(400)
+      .json({ message: "Student ID missing in token" });
+  }
 
   const sql = `
     INSERT INTO project_applications
@@ -57,19 +68,25 @@ exports.applyProject = (req, res) => {
     (err, result) => {
       if (err) {
         console.error("DB INSERT ERROR:", err);
-        return res.status(500).json({ message: "Failed to apply" });
+        return res
+          .status(500)
+          .json({ message: "Failed to apply to project" });
       }
 
-      console.log("INSERT RESULT:", result);
-      res.json({ message: "Application submitted successfully" });
+      res.json({
+        message: "Application submitted successfully",
+      });
     }
   );
 };
 
-// controllers/studentController.js
-
+/**
+ * ===============================
+ * STUDENT → VIEW MY APPLICATIONS
+ * ===============================
+ */
 exports.getMyApplications = (req, res) => {
-  const student_id = req.user.user_id || req.user.id;
+  const student_id = req.user.user_id;
 
   const sql = `
     SELECT 
@@ -85,12 +102,12 @@ exports.getMyApplications = (req, res) => {
 
   db.query(sql, [student_id], (err, results) => {
     if (err) {
-      console.error(err);
-      return res.status(500).json({ message: "Failed to fetch applications" });
+      console.error("Error fetching applications:", err);
+      return res
+        .status(500)
+        .json({ message: "Failed to fetch applications" });
     }
+
     res.json(results);
   });
 };
-
-
-

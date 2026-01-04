@@ -1,22 +1,29 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import PitchProject from "./pitchProject"; 
+
+import rvceLogo from "../assets/rvce_logo.png";
+import PitchProject from "./pitchProject";
 import ProjectUpdates from "../components/projectUpdates";
+
 import { Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   ArcElement,
   Tooltip,
-  Legend
+  Legend,
 } from "chart.js";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-
-
 function CompanyDashboard() {
+  const navigate = useNavigate();
+
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedProject, setExpandedProject] = useState(null);
+  const [showPitch, setShowPitch] = useState(false);
+
   const approved = projects.filter(p => p.status === "APPROVED").length;
   const pending = projects.filter(p => p.status === "PENDING").length;
   const rejected = projects.filter(p => p.status === "REJECTED").length;
@@ -26,17 +33,21 @@ function CompanyDashboard() {
     datasets: [
       {
         data: [approved, pending, rejected],
-        backgroundColor: ["lightgreen", "orange", "salmon"]
-      }
-    ]
+        backgroundColor: ["#2e7d32", "#f57c00", "#b00020"],
+      },
+    ],
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/");
   };
 
   const fetchProjects = async () => {
     try {
       const res = await api.get("/company/projects");
-      setProjects(res.data);
+      setProjects(res.data || []);
     } catch (err) {
-      console.error(err);
       alert("Failed to load projects");
     } finally {
       setLoading(false);
@@ -47,66 +58,226 @@ function CompanyDashboard() {
     fetchProjects();
   }, []);
 
-  if (loading) {
-    return <p style={{ padding: "30px" }}>Loading...</p>;
-  }
+  if (loading) return <p style={{ padding: "30px" }}>Loading...</p>;
 
   return (
-    <div style={{ padding: "30px", color: "white" }}>
-      <h1>Company Dashboard</h1>
+    <div style={pageStyle}>
+      {/* HEADER */}
+      <div style={headerStyle}>
+        <img src={rvceLogo} alt="RVCE Logo" style={logoStyle} />
+        <h1 style={centerTitleStyle}>Company Dashboard</h1>
+        <button style={logoutButtonStyle} onClick={handleLogout}>
+          Logout
+        </button>
+      </div>
 
-      {/* 🔷 F6.3 — Pitch Project Form */}
-      <PitchProject onSuccess={fetchProjects} />
+      {/* ================= PITCH PROJECT ================= */}
+      <div style={cardStyle}>
+        <h3
+          style={expandableTitle}
+          onClick={() => setShowPitch(!showPitch)}
+        >
+          ➕ Pitch New Project
+        </h3>
 
-      <h2>My Projects</h2>
-
-      {projects.length === 0 ? (
-        <p>No projects pitched yet</p>
-      ) : (
-        projects.map((p) => (
-          <div
-            key={p.project_id}
-            style={{
-              border: "1px solid #555",
-              padding: "15px",
-              marginBottom: "15px",
-            }}
-          >
-            <ProjectUpdates projectId={p.project_id} />
-            <h3>{p.title}</h3>
-            <p>
-              <b>Department:</b> {p.department}
-            </p>
-            <p>
-              <b>Team Size:</b> {p.team_size}
-            </p>
-            <p>
-              <b>Status:</b>{" "}
-              <span
-                style={{
-                  color:
-                    p.status === "APPROVED"
-                      ? "lightgreen"
-                      : p.status === "REJECTED"
-                      ? "salmon"
-                      : "orange",
-                }}
-              >
-                {p.status}
-              </span>
-            </p>
+        {showPitch && (
+          <div style={expandBoxStyle}>
+            <PitchProject onSuccess={fetchProjects} />
           </div>
-        ))
-      )}
-      <p>Total Projects: {projects.length}</p>
+        )}
+      </div>
+
+      {/* ================= MY PROJECTS ================= */}
+      <div style={cardStyle}>
+        <h2 style={sectionTitle}>My Projects</h2>
+
+        <table style={tableStyle}>
+          <thead>
+            <tr>
+              <th style={thStyle}>Project Title</th>
+              <th style={thStyle}>Department</th>
+              <th style={thStyle}>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {projects.length === 0 ? (
+              <tr>
+                <td style={tdStyle} colSpan="3">
+                  No projects pitched yet
+                </td>
+              </tr>
+            ) : (
+              projects.map(p => (
+                <>
+                  <tr key={p.project_id}>
+                    <td
+                      style={{ ...tdStyle, ...linkStyle }}
+                      onClick={() =>
+                        setExpandedProject(
+                          expandedProject === p.project_id
+                            ? null
+                            : p.project_id
+                        )
+                      }
+                    >
+                      {p.title}
+                    </td>
+                    <td style={tdStyle}>{p.department}</td>
+                    <td style={tdStyle}>
+                      <span
+                        style={{
+                          fontWeight: "600",
+                          color:
+                            p.status === "APPROVED"
+                              ? "#2e7d32"
+                              : p.status === "REJECTED"
+                              ? "#b00020"
+                              : "#f57c00",
+                        }}
+                      >
+                        {p.status}
+                      </span>
+                    </td>
+                  </tr>
+
+                  {expandedProject === p.project_id && (
+                    <tr>
+                      <td colSpan="3" style={tdStyle}>
+                        <p><b>Team Size:</b> {p.team_size}</p>
+
+                        {/* PROJECT UPDATES */}
+                        <div style={updateBoxStyle}>
+                          <ProjectUpdates projectId={p.project_id} />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ================= PIE ================= */}
+      <div style={cardStyle}>
+        <h2 style={sectionTitle}>Project Status Overview</h2>
+
+        <p>Total Projects: {projects.length}</p>
         <p>Approved: {approved}</p>
         <p>Pending: {pending}</p>
-      <h3>Project Status Overview</h3>
+        <p>Rejected: {rejected}</p>
 
-      <Pie data={companyPieData} />
-
+        <div style={pieWrapper}>
+          <Pie data={companyPieData} />
+        </div>
+      </div>
     </div>
   );
 }
+
+/* ================= STYLES ================= */
+
+const pageStyle = {
+  minHeight: "100vh",
+  backgroundColor: "#ffffff",
+  padding: "30px",
+  fontFamily: "Arial, sans-serif",
+  color: "#000000",
+};
+
+const headerStyle = {
+  position: "relative",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "30px",
+};
+
+const logoStyle = { height: "50px" };
+
+const centerTitleStyle = {
+  position: "absolute",
+  left: "50%",
+  transform: "translateX(-50%)",
+  fontSize: "28px",
+  fontWeight: "600",
+  color: "#0a2a66",
+};
+
+const logoutButtonStyle = {
+  backgroundColor: "#0a2a66",
+  color: "#fff",
+  border: "none",
+  padding: "10px 18px",
+  borderRadius: "6px",
+  cursor: "pointer",
+};
+
+const cardStyle = {
+  backgroundColor: "#f4f6fa",
+  padding: "24px",
+  borderRadius: "10px",
+  boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+  marginBottom: "30px",
+};
+
+const sectionTitle = {
+  color: "#0a2a66",
+  marginBottom: "16px",
+};
+
+const expandableTitle = {
+  color: "#0a2a66",
+  cursor: "pointer",
+  marginBottom: "10px",
+};
+
+const tableStyle = {
+  width: "100%",
+  borderCollapse: "collapse",
+  backgroundColor: "#ffffff",
+};
+
+const thStyle = {
+  textAlign: "left",
+  padding: "12px",
+  backgroundColor: "#e9ecf3",
+  color: "#0a2a66",
+  fontWeight: "600",
+  borderBottom: "1px solid #ccc",
+};
+
+const tdStyle = {
+  padding: "12px",
+  borderBottom: "1px solid #e0e0e0",
+  verticalAlign: "top",
+};
+
+const linkStyle = {
+  color: "#0a2a66",
+  cursor: "pointer",
+  fontWeight: "600",
+};
+
+const expandBoxStyle = {
+  backgroundColor: "#ffffff",
+  padding: "16px",
+  borderRadius: "8px",
+  border: "1px solid #d0d7e2",
+};
+
+const updateBoxStyle = {
+  marginTop: "12px",
+  padding: "12px",
+  backgroundColor: "#e3f2fd", // ✅ blue-tinted
+  borderRadius: "8px",
+};
+
+const pieWrapper = {
+  width: "260px",
+  height: "260px",
+  margin: "20px auto 0",
+};
 
 export default CompanyDashboard;
