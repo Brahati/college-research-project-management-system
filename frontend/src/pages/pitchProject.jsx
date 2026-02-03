@@ -7,6 +7,7 @@ function PitchProject({ onSuccess }) {
     description: "",
     department: "",
     team_size: "",
+    budget: ""
   });
 
   const handleChange = (e) => {
@@ -22,6 +23,7 @@ function PitchProject({ onSuccess }) {
         description: form.description,
         department: form.department,
         team_size: Number(form.team_size),
+        budget: Number(form.budget)
       });
 
       alert("Project submitted for admin approval");
@@ -94,6 +96,19 @@ function PitchProject({ onSuccess }) {
             style={inputStyle}
           />
         </div>
+        <div style={fieldGroup}>
+  <label style={labelStyle}>Project Budget (₹)</label>
+  <input
+    name="budget"
+    type="number"
+    placeholder="e.g. 500000"
+    value={form.budget}
+    onChange={handleChange}
+    required
+    style={inputStyle}
+  />
+</div>
+
 
         <button type="submit" style={submitButtonStyle}>
           Submit Project

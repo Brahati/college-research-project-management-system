@@ -82,6 +82,19 @@ function FacultyDashboard() {
 
   if (loading) return <p style={{ padding: "20px" }}>Loading...</p>;
 
+  const downloadFacultyPDF = async () => {
+  const res = await api.get("/reports/download/faculty/pdf", {
+    responseType: "blob",
+  });
+
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "Faculty_Report.pdf");
+  link.click();
+};
+
+
   return (
     <div style={pageStyle}>
       {/* HEADER */}
@@ -90,11 +103,16 @@ function FacultyDashboard() {
 
         <h1 style={centerTitleStyle}>Faculty Dashboard</h1>
 
-        <button style={logoutButtonStyle} onClick={handleLogout}>
-          Logout
-        </button>
+        {/* Button Wrapper to stack them */}
+        <div style={buttonGroupStyle}>
+          <button style={logoutButtonStyle} onClick={handleLogout}>
+            Logout
+          </button>
+          <button style={actionButtonStyle} onClick={downloadFacultyPDF}>
+            Download Report (PDF)
+          </button>
+        </div>
       </div>
-
       {/* ================= MY PROJECTS ================= */}
       <div style={cardStyle}>
         <h2 style={sectionTitle}>My Projects</h2>
@@ -164,7 +182,9 @@ function FacultyDashboard() {
                                     {a.status === "PENDING" ? (
                                       <>
                                         <button
-                                          style={actionButtonStyle}
+                                          style={{actionButtonStyle,
+                                            backgroundColor: "#2e7d32"
+                                          }}
                                           onClick={() =>
                                             updateApplicationStatus(
                                               a.application_id,
@@ -174,10 +194,10 @@ function FacultyDashboard() {
                                         >
                                           Accept
                                         </button>
+                                        <p></p>
                                         <button
                                           style={{
-                                            ...actionButtonStyle,
-                                            marginLeft: "8px",
+                                            actionButtonStyle,
                                             backgroundColor: "#b00020",
                                           }}
                                           onClick={() =>
@@ -304,15 +324,6 @@ const centerTitleStyle = {
   color: "#0a2a66",
 };
 
-const logoutButtonStyle = {
-  backgroundColor: "#0a2a66",
-  color: "#ffffff",
-  border: "none",
-  padding: "10px 18px",
-  borderRadius: "6px",
-  cursor: "pointer",
-};
-
 const cardStyle = {
   backgroundColor: "#f4f6fa",
   padding: "24px",
@@ -359,19 +370,38 @@ const linkStyle = {
   fontWeight: "600",
 };
 
-const actionButtonStyle = {
-  padding: "8px 14px",
-  backgroundColor: "#0a2a66",
-  color: "#ffffff",
-  border: "none",
-  borderRadius: "5px",
-  cursor: "pointer",
-};
-
 const pieWrapper = {
   width: "260px",
   height: "260px",
   margin: "0 auto",
+};
+
+const actionButtonStyle = {
+  padding: "8px 16px",
+  backgroundColor: "#0a2a66",
+  color: "#ffffff",
+  border: "none",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontSize: "14px", 
+  width: "100%",    
+};
+
+const buttonGroupStyle = {
+  display: "flex",
+  flexDirection: "column", 
+  gap: "10px",             
+  alignItems: "flex-end",  
+};
+
+const logoutButtonStyle = {
+  backgroundColor: "#0a2a66",
+  color: "#ffffff",
+  border: "none",
+  padding: "10px 18px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  width: "100%",    
 };
 
 export default FacultyDashboard;

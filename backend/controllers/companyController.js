@@ -7,6 +7,7 @@ exports.createProject = (req, res) => {
   const companyUserId = req.user.user_id;
   const { title, description, department } = req.body;
   const team_size = Number(req.body.team_size);
+  const budget = Number(req.body.budget);
 
   if (!title || !description || !department || !team_size) {
     return res.status(400).json({ message: "All fields required" });
@@ -24,11 +25,11 @@ exports.createProject = (req, res) => {
 
     const insertSql = `
       INSERT INTO projects
-      (title, description, department, team_size, company_id, status)
-      VALUES (?, ?, ?, ?, ?, 'PENDING')
+      (title, description, department, team_size, budget, company_id, status)
+      VALUES (?, ?, ?, ?, ?, ?, 'PENDING')
     `;
 
-    db.query(insertSql, [title, description, department, team_size, companyId], (err) => {
+    db.query(insertSql, [title, description, department, team_size, budget, companyId], (err) => {
       if (err) return res.status(500).json({ message: "Project creation failed" });
       res.json({ message: "Project submitted for admin approval" });
     });

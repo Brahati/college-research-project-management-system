@@ -9,10 +9,12 @@ exports.getPendingProjects = (req, res) => {
       p.title,
       p.description,
       p.department,
+      p.budget,
       c.company_name
     FROM projects p
     LEFT JOIN companies c ON p.company_id = c.company_id
     WHERE p.status = 'PENDING'
+    ORDER BY p.project_id DESC
   `;
 
   db.query(sql, (err, results) => {
@@ -95,20 +97,41 @@ exports.getAdminStats = (req, res) => {
       FROM projects
       WHERE status = 'APPROVED'
       GROUP BY department
+    `,
+    departmentBudgetStats: `
+      SELECT department, SUM(budget) AS total_budget
+      FROM projects
+      WHERE status = 'APPROVED'
+      GROUP BY department
     `
   };
 
   db.query(queries.statusStats, (err, statusResult) => {
-    if (err) return res.status(500).json(err);
+    if (err) {
+      console.error(err);
+      return res.status(500).json(err);
+    }
 
     db.query(queries.departmentStats, (err, deptResult) => {
-      if (err) return res.status(500).json(err);
+      if (err) {
+        console.error(err);
+        return res.status(500).json(err);
+      }
 
-      res.json({
-        statusStats: statusResult,
-        departmentStats: deptResult
+      db.query(queries.departmentBudgetStats, (err, budgetResult) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json(err);
+        }
+
+        res.json({
+          statusStats: statusResult,
+          departmentStats: deptResult,
+          departmentBudgetStats: budgetResult
+        });
       });
     });
   });
 };
+
 

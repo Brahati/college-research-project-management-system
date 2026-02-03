@@ -10,8 +10,18 @@ function StudentDashboard() {
   const [projects, setProjects] = useState([]);
   const [applications, setApplications] = useState([]);
   const [expandedProject, setExpandedProject] = useState(null);
-  const [error, setError] = useState("");
+  //const [error, setError] = useState("");
+  //const [report, setReport] = useState([]);
+  //const [showReport, setShowReport] = useState(false);
+/*
+  const fetchStudentReport = async () => {
+    console.log("View My Report clicked");
+    const res = await api.get("/reports/student");
+    setReport(res.data);
+    setShowReport(true);
+  };
 
+*/
   /* ---------------- LOGOUT ---------------- */
   const handleLogout = () => {
     localStorage.clear();
@@ -27,7 +37,7 @@ function StudentDashboard() {
       );
     } catch (err) {
       console.error(err);
-      setError("Failed to load projects");
+      alert("Failed to load projects");
       setProjects([]);
     }
   };
@@ -67,6 +77,20 @@ function StudentDashboard() {
     }
   };
 
+  /* ---------------- Download Report ---------------- */
+  const downloadStudentPDF = async () => {
+  const res = await api.get("/reports/download/student/pdf", {
+    responseType: "blob",
+  });
+
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "Student_Report.pdf");
+  document.body.appendChild(link);
+  link.click();
+};
+
   /* ---------------- INIT ---------------- */
   
   
@@ -84,12 +108,16 @@ function StudentDashboard() {
       <div style={headerStyle}>
         <img src={rvceLogo} alt="RVCE Logo" style={logoStyle} />
         <h1 style={centerTitleStyle}>Student Dashboard</h1>
-        <button style={logoutButtonStyle} onClick={handleLogout}>
-          Logout
-        </button>
+        {/* Button Wrapper to stack them */}
+        <div style={buttonGroupStyle}>
+          <button style={logoutButtonStyle} onClick={handleLogout}>
+            Logout
+          </button>
+          <button style={actionButtonStyle} onClick={downloadStudentPDF}>
+            Download Report (PDF)
+          </button>
+        </div>
       </div>
-
-      {error && <p style={errorStyle}>{error}</p>}
 
       {/* ================= AVAILABLE PROJECTS ================= */}
       <div style={cardStyle}>
@@ -233,6 +261,7 @@ function StudentDashboard() {
   );
 }
 
+
 /* ================= STYLES ================= */
 
 const pageStyle = {
@@ -264,20 +293,12 @@ const centerTitleStyle = {
   color: "#0a2a66",
 };
 
-const logoutButtonStyle = {
-  backgroundColor: "#0a2a66",
-  color: "#ffffff",
-  border: "none",
-  padding: "10px 18px",
-  borderRadius: "6px",
-  cursor: "pointer",
-};
-
+/*
 const errorStyle = {
   color: "#b00020",
   marginBottom: "16px",
 };
-
+*/
 const cardStyle = {
   backgroundColor: "#f4f6fa",
   padding: "24px",
@@ -345,6 +366,25 @@ const actionButtonStyle = {
   border: "none",
   borderRadius: "6px",
   cursor: "pointer",
+  fontSize: "14px", 
+  width: "100%",    
+};
+
+const buttonGroupStyle = {
+  display: "flex",
+  flexDirection: "column", 
+  gap: "10px",             
+  alignItems: "flex-end",  
+};
+
+const logoutButtonStyle = {
+  backgroundColor: "#0a2a66",
+  color: "#ffffff",
+  border: "none",
+  padding: "10px 18px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  width: "100%",    
 };
 
 export default StudentDashboard;

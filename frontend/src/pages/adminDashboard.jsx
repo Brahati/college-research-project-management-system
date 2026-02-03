@@ -88,6 +88,19 @@ function AdminDashboard() {
     }
   };
 
+  const downloadAdminPDF = async () => {
+  const res = await api.get("/reports/download/admin/pdf", {
+    responseType: "blob",
+  });
+
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "Admin_Report.pdf");
+  link.click();
+};
+
+
   /* ---------------- NORMALIZE STATUS ORDER ---------------- */
   const orderedStatusStats = stats
     ? ["PENDING", "APPROVED", "REJECTED"].map((status) => {
@@ -104,9 +117,15 @@ function AdminDashboard() {
       <div style={headerStyle}>
         <img src={rvceLogo} alt="RVCE Logo" style={logoStyle} />
         <h1 style={centerTitleStyle}>Admin Dashboard</h1>
-        <button style={logoutButtonStyle} onClick={handleLogout}>
-          Logout
-        </button>
+        {/* Button Wrapper to stack them */}
+        <div style={buttonGroupStyle}>
+          <button style={logoutButtonStyle} onClick={handleLogout}>
+            Logout
+          </button>
+          <button style={actionButtonStyle} onClick={downloadAdminPDF}>
+            Download Report (PDF)
+          </button>
+        </div>
       </div>
 
       {/* ================= PENDING PROJECTS ================= */}
@@ -122,6 +141,10 @@ function AdminDashboard() {
 
               <p><b>Company:</b> {p.company_name}</p>
               <p><b>Department:</b> {p.department}</p>
+              <p>
+                <b>Budget:</b>{" "}
+                ₹{Number(p.budget).toLocaleString("en-IN")}
+              </p>
               <p>{p.description}</p>
 
               <div style={{ marginTop: "12px" }}>
@@ -171,7 +194,7 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* ================= BAR CHART ================= */}
+      {/* ================= BAR CHART: PROJECT COUNT ================= */}
       {stats && (
         <div style={cardStyle}>
           <h2 style={sectionTitle}>Department-wise Projects</h2>
@@ -184,13 +207,59 @@ function AdminDashboard() {
                 ),
                 datasets: [
                   {
-                    label: "Projects",
+                    label: "Number of Projects",
                     data: stats.departmentStats.map(
                       (d) => d.count
                     ),
                     backgroundColor: "#90caf9",
                   },
                 ],
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ================= BAR CHART: BUDGET ================= */}
+      {stats?.departmentBudgetStats && (
+        <div style={cardStyle}>
+          <h2 style={sectionTitle}>
+            Department-wise Project Budget (₹)
+          </h2>
+
+          <div style={barWrapper}>
+            <Bar
+              data={{
+                labels: stats.departmentBudgetStats.map(
+                  (d) => d.department
+                ),
+                datasets: [
+                  {
+                    label: "Total Budget (₹)",
+                    data: stats.departmentBudgetStats.map(
+                      (d) => d.total_budget
+                    ),
+                    backgroundColor: "#4caf50",
+                  },
+                ],
+              }}
+              options={{
+                plugins: {
+                  tooltip: {
+                    callbacks: {
+                      label: (ctx) =>
+                        `₹${Number(ctx.raw).toLocaleString("en-IN")}`,
+                    },
+                  },
+                },
+                scales: {
+                  y: {
+                    ticks: {
+                      callback: (value) =>
+                        `₹${Number(value).toLocaleString("en-IN")}`,
+                    },
+                  },
+                },
               }}
             />
           </div>
@@ -226,20 +295,11 @@ const centerTitleStyle = {
   position: "absolute",
   left: "50%",
   transform: "translateX(-50%)",
-  margin: 0,
   fontSize: "28px",
   fontWeight: "600",
   color: "#0a2a66",
 };
 
-const logoutButtonStyle = {
-  backgroundColor: "#0a2a66",
-  color: "#ffffff",
-  border: "none",
-  padding: "10px 18px",
-  borderRadius: "6px",
-  cursor: "pointer",
-};
 
 const cardStyle = {
   backgroundColor: "#f4f6fa",
@@ -293,8 +353,37 @@ const chartWrapper = {
 };
 
 const barWrapper = {
-  maxWidth: "600px",
+  maxWidth: "700px",
   margin: "0 auto",
 };
 
+const actionButtonStyle = {
+  padding: "8px 16px",
+  backgroundColor: "#0a2a66",
+  color: "#ffffff",
+  border: "none",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontSize: "14px", 
+  width: "100%",    
+};
+
+const buttonGroupStyle = {
+  display: "flex",
+  flexDirection: "column", 
+  gap: "10px",             
+  alignItems: "flex-end",  
+};
+
+const logoutButtonStyle = {
+  backgroundColor: "#0a2a66",
+  color: "#ffffff",
+  border: "none",
+  padding: "10px 18px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  width: "100%",    
+};
+
 export default AdminDashboard;
+

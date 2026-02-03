@@ -68,6 +68,19 @@ function CompanyDashboard() {
     }
   };
 
+  const downloadCompanyPDF = async () => {
+  const res = await api.get("/reports/download/company/pdf", {
+    responseType: "blob",
+  });
+
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "Company_Report.pdf");
+  link.click();
+};
+
+
   useEffect(() => {
     fetchCompanyProfile();
     fetchProjects();
@@ -81,9 +94,15 @@ function CompanyDashboard() {
       <div style={headerStyle}>
         <img src={rvceLogo} alt="RVCE Logo" style={logoStyle} />
         <h1 style={centerTitleStyle}>Welcome, {companyName}</h1>
-        <button style={logoutButtonStyle} onClick={handleLogout}>
-          Logout
-        </button>
+        {/* Button Wrapper to stack them */}
+        <div style={buttonGroupStyle}>
+          <button style={logoutButtonStyle} onClick={handleLogout}>
+            Logout
+          </button>
+          <button style={actionButtonStyle} onClick={downloadCompanyPDF}>
+            Download Report (PDF)
+          </button>
+        </div>
       </div>
 
       {/* ================= PITCH PROJECT ================= */}
@@ -219,15 +238,6 @@ const centerTitleStyle = {
   color: "#0a2a66",
 };
 
-const logoutButtonStyle = {
-  backgroundColor: "#0a2a66",
-  color: "#fff",
-  border: "none",
-  padding: "10px 18px",
-  borderRadius: "6px",
-  cursor: "pointer",
-};
-
 const cardStyle = {
   backgroundColor: "#f4f6fa",
   padding: "24px",
@@ -291,6 +301,34 @@ const pieWrapper = {
   width: "260px",
   height: "260px",
   margin: "20px auto 0",
+};
+
+const actionButtonStyle = {
+  padding: "8px 16px",
+  backgroundColor: "#0a2a66",
+  color: "#ffffff",
+  border: "none",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontSize: "14px", 
+  width: "100%",    
+};
+
+const buttonGroupStyle = {
+  display: "flex",
+  flexDirection: "column", 
+  gap: "10px",             
+  alignItems: "flex-end",  
+};
+
+const logoutButtonStyle = {
+  backgroundColor: "#0a2a66",
+  color: "#ffffff",
+  border: "none",
+  padding: "10px 18px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  width: "100%",    
 };
 
 export default CompanyDashboard;
